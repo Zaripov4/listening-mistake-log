@@ -10,7 +10,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mistake Log">
+<meta name="apple-mobile-web-app-title" content="Listening Log">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
 :root{
@@ -194,11 +194,13 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
   </section>
 
   <section class="card">
-    <h2>Keep your data safe</h2>
-    <p class="sub">Your data is saved only on this phone. Save a backup now and then.</p>
+    <h2>Share and save</h2>
+    <p class="sub">Send your top mistakes and scores to a teacher, a parent or a friend.</p>
+    <button class="big" type="button" id="shareBtn" style="background:var(--primary)">📤 Send my results</button>
+    <p class="sub" style="margin:18px 0 10px">Your data is saved only on this phone. <b>Changing phones?</b> Save a backup file here, then load it on the new phone. You don't need to open the file.</p>
     <div class="tools">
-      <button class="tool" type="button" id="backupBtn">⬇︎ Save a backup file</button>
-      <button class="tool" type="button" id="restoreBtn">⬆︎ Load a backup file</button>
+      <button class="tool" type="button" id="backupBtn">⬇︎ Save a backup file (for a new phone)</button>
+      <button class="tool" type="button" id="restoreBtn">⬆︎ Load a backup file (on the new phone)</button>
       <input type="file" id="restoreIn" accept=".json,application/json" hidden>
       <button class="tool danger" type="button" id="resetBtn">Start again (delete everything)</button>
     </div>
@@ -562,7 +564,7 @@ $("backupBtn").onclick = () => {
   a.href = URL.createObjectURL(blob);
   a.download = `listening-mistakes-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a); a.click(); a.remove();
-  toast("Backup saved to your Downloads / Files");
+  toast("Backup saved. Keep it for your new phone.");
 };
 $("restoreBtn").onclick = () => $("restoreIn").click();
 $("restoreIn").onchange = async e => {
@@ -586,9 +588,37 @@ $("resetBtn").onclick = () => {
   }
   clearTimeout(armTimer);
   const before = JSON.stringify(state);
-  state = {mistakes:[], scores:[], seenWelcome:true}; save(); renderAll();
+  state = {mistakes:[], scores:[], seenWelcome:true, module:state.module}; save(); renderAll();
   b.classList.remove("armed"); b.textContent = "Start again (delete everything)";
   toast("Everything deleted", () => { state = JSON.parse(before); save(); renderAll(); });
+};
+
+/* ---------- readable report to share ---------- */
+function reportText(){
+  const name = document.title;
+  const today = new Date().toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+  const c = counts(state.mistakes.slice(-RECENT));
+  const order = c.map((n,i)=>[n,i]).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0] || a[1]-b[1]).slice(0,3);
+  const L = [`My IELTS ${name} (${today})`, `Wrong answers checked: ${state.mistakes.length}`];
+  if (order.length){ L.push("", "My top mistakes:"); order.forEach(([n,i],k)=>L.push(`${k+1}. ${REASONS[i].name}: ${n} time${n>1?"s":""}`)); }
+  if (state.scores.length){
+    const s = state.scores, last = s[s.length-1];
+    L.push("", `Scores: ${s.slice(-6).map(x=>x.s).join(", ")} (out of 40)`, `Latest: ${last.s}/40, about band ${band(last.s, last.m)}`);
+  }
+  const recent = state.mistakes.filter(m => m.right !== undefined).slice(-10).reverse();
+  if (recent.length){ L.push("", "Last wrong answers:"); recent.forEach(m => L.push(`${m.q ? "Q"+m.q+" " : ""}${m.mine || "(empty)"} → ${m.right}: ${REASONS[m.r].name}`)); }
+  L.push("", `Made with ${name}: ${location.href.split("#")[0]}`);
+  return L.join("\n");
+}
+$("shareBtn").onclick = async () => {
+  if (!state.mistakes.length && !state.scores.length){ toast("Nothing to send yet. Check a wrong answer first."); return; }
+  const text = reportText();
+  if (navigator.share){
+    try { await navigator.share({title: document.title, text}); return; }
+    catch(e){ if (e && e.name === "AbortError") return; }
+  }
+  try { await navigator.clipboard.writeText(text); toast("Copied. Paste it into Telegram or a message."); }
+  catch(e){ toast("Couldn't copy. Please try again."); }
 };
 
 $("helpBtn").onclick = () => $("helpDlg").showModal();

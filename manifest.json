@@ -1,6 +1,6 @@
 {
   "name": "Listening Mistake Log",
-  "short_name": "Mistake Log",
+  "short_name": "Listening Log",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#F3F6FA",
