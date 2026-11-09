@@ -236,7 +236,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
   <div class="dbody">
     <h2 style="margin-bottom:10px">How to use</h2>
     <ol>
-      <li>Do one Listening practice test. Cambridge IELTS books are best.</li>
+      <li>Do one Listening practice test, like the real exam: <b>listen only once</b>, no pausing. Use real tests (Cambridge IELTS books are best).</li>
       <li>Check your answers. Keep the <b>transcript</b> (the text of the recording) open. It's at the back of the book.</li>
       <li>For <b>each wrong answer</b>, tap <b>Check a wrong answer</b>. Pick the kind of question, type your answer and the right answer. The app may ask you 1–3 easy yes/no questions.</li>
       <li>Type your score out of 40 under <b>My scores</b>.</li>
@@ -251,16 +251,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 const REASONS = [
   {name:"Spelling", hint:"I heard it but wrote it wrong",
    why:"You had the right word, but the spelling was wrong.",
-   fix:"Keep a notebook of every word you misspell and test yourself every week. Watch double letters (accommodation, necessary) and words that sound the same (quite/quiet). British and American spellings are both accepted."},
+   fix:"Keep a notebook of every word you misspell and test yourself every week. Watch double letters (accommodation, necessary) and words that sound the same (quite/quiet). Learn the hard days and months (Wednesday, February) and start them, and names, with a capital letter. British and American spellings are both accepted."},
   {name:"Missing -s", hint:"One thing or many? I got it wrong",
    why:"The word was right, but the -s (one thing or many) was wrong.",
-   fix:"Before the audio, look at the word before the gap: a, an, many, several, two. One thing or many? At the end, check every -s."},
+   fix:"Before the audio, predict what the gap needs: a noun, verb or adjective? One thing or many? Look at the word before the gap (a, an, many, several, two). Your answer must fit the sentence, so check every -s at the end."},
   {name:"Trick answer", hint:"The speaker said it, then changed it",
    why:"The speaker said your answer too, but then changed it or said it was wrong. This is a trap.",
    fix:"The first thing you hear is often changed. Listen for but, however, actually, sorry. In multiple choice the speakers usually talk about every option: tick the one you think is right, but keep listening until they have discussed them all."},
   {name:"Different words", hint:"They said it with other words",
    why:"The speaker said the answer with different words from the question, so you didn't notice it.",
-   fix:"Before the audio, underline 2 key words in each question (and in each option) and think of another way to say them. The recording almost never uses the same words. After the test, write the pairs in a list."},
+   fix:"Before the audio, underline the key words and think of other ways to say them: the form says 'arrival date', the speaker says 'the day you arrive'. In multiple choice, underline what makes each option different. After the test, write the pairs in a list."},
   {name:"Got lost", hint:"I lost my place or stopped focusing",
    why:"You lost your place, or your mind wandered, and the answer went past.",
    fix:"Watch this question and the next one together. If you miss one, let it go and move on, and guess at the end. Use the breaks to read the next questions, not to check old answers. Build focus step by step: practise one Part at a time, then two, then a full test."},
@@ -272,7 +272,7 @@ const REASONS = [
    fix:"First guess the meaning from the sentence, then check it. Write it in a notebook with its pronunciation and the sentence you heard it in, and review your notebook every week. Part 4 lectures use more academic words, so listen to talks and podcasts on academic topics."},
   {name:"Too fast", hint:"Words ran together or the accent was hard",
    why:"You heard the answer, but the words ran together or the accent was hard to follow.",
-   fix:"Replay the sentence 5–10 times and try to separate every word (\"wanna go\" = \"want to go\"). Only then check the transcript. Listen to many accents: British, Australian, American, Canadian, New Zealand."},
+   fix:"Replay the sentence 5–10 times and try to separate every word (\"wanna go\" = \"want to go\"). Only then check the transcript. Practise numbers that sound alike (13/30, 14/40, 15/50) and letters (B, D, E, G, P, T). Listen to many accents: British, Australian, American, Canadian, New Zealand."},
   {name:"Map directions", hint:"I got lost on the map",
    why:"You lost track of where the speaker was on the map, or a direction word confused you.",
    fix:"Before the audio, find where the speaker starts and picture the route. Learn the direction words: opposite, next to, behind, in front of, at the top/bottom, on the corner, just past, clockwise, turn left/right. Follow the speaker with your pencil."}
@@ -518,7 +518,9 @@ function renderTop(){
 }
 // Part of the test from the question number
 const PART = { label:"Part", count:4, of:q => Math.min(4, Math.ceil(q/10)),
-  tip:{3:"Most of your mistakes are in Parts 3–4. That usually means academic words or fast, joined-up speech: practise with talks and lectures.",
+  tip:{1:"Most of your mistakes are in Part 1, the easiest marks. Fix these first: spelling, numbers, letters, dates and word limits.",
+       2:"Most of your mistakes are in Parts 1–2, the easier marks. Secure these first before worrying about Part 4.",
+       3:"Most of your mistakes are in Parts 3–4. That usually means academic words or fast, joined-up speech: practise with talks and lectures.",
        4:"Most of your mistakes are in Parts 3–4. That usually means academic words or fast, joined-up speech: practise with talks and lectures."} };
 function renderWhere(){
   const list = state.mistakes.slice(-RECENT);
