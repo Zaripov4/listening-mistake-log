@@ -359,9 +359,9 @@ const TREE_MAP = {
               yes:R.TRICK, no:R.FAST } }
 };
 const KINDS = {
-  w:{label:"I wrote words or numbers", short:"Writing words", sub:"Forms, notes, tables, sentences"},
-  l:{label:"I chose a letter", short:"Choosing a letter", sub:"Multiple choice (A, B, C) or matching"},
-  m:{label:"A map or a plan", short:"Maps and plans", sub:"Labelling places on a map"}
+  w:{label:"I wrote words or numbers", short:"Writing words", sub:"Forms, notes, tables, flow-charts, summaries, sentences, short answers"},
+  l:{label:"I chose a letter", short:"Choosing a letter", sub:"Multiple choice, matching, or a box of options (A, B, C…)"},
+  m:{label:"A map, plan or diagram", short:"Maps and diagrams", sub:"Labelling places or parts, with letters or words"}
 };
 
 /* ---------- state ---------- */
@@ -395,16 +395,19 @@ function showKind(){
 }
 function showForm(err){
   setStep("Step 2 of 3");
-  const letters = det.kind !== "w";
+  const letters = det.kind === "l", map = det.kind === "m";
+  const L = letters ? {mine:"Which letter did you choose?", right:"Which letter is right?", ph:["B","C"], hint:""}
+          : map ? {mine:"What did you write?", right:"What is the right answer?", ph:["Leave empty if you wrote nothing","C or car park"], hint:'<p class="hint">A letter (like C) or words (like car park).</p>'}
+          : {mine:"What did you write?", right:"What is the right answer?", ph:["Leave empty if you wrote nothing","From the answer key"], hint:""};
   $("detView").innerHTML = `
     <form id="detForm" novalidate autocomplete="off">
       <label for="fQ">Which question did you get wrong?</label>
       <p class="hint">Type its number. For example, if you got question 25 wrong, type 25.</p>
       <input class="field qn" id="fQ" type="number" inputmode="numeric" min="1" max="40" placeholder="25" value="${esc(det.q)}">
-      <label for="fMine">${letters ? "Which letter did you choose?" : "What did you write?"}</label>
-      <input class="field ${letters ? "qn" : ""}" id="fMine" type="text" autocapitalize="${letters ? "characters" : "off"}" spellcheck="false" maxlength="${letters ? 2 : 60}" placeholder="${letters ? "B" : "Leave empty if you wrote nothing"}" value="${esc(det.mine)}">
-      <label for="fRight">${letters ? "Which letter is right?" : "What is the right answer?"}</label>
-      <input class="field ${letters ? "qn" : ""}" id="fRight" type="text" autocapitalize="${letters ? "characters" : "off"}" spellcheck="false" maxlength="${letters ? 2 : 60}" placeholder="${letters ? "C" : "From the answer key"}" value="${esc(det.right)}">
+      <label for="fMine">${L.mine}</label>${L.hint}
+      <input class="field ${letters ? "qn" : ""}" id="fMine" type="text" autocapitalize="${letters ? "characters" : "off"}" spellcheck="false" maxlength="${letters ? 2 : 60}" placeholder="${L.ph[0]}" value="${esc(det.mine)}">
+      <label for="fRight">${L.right}</label>
+      <input class="field ${letters ? "qn" : ""}" id="fRight" type="text" autocapitalize="${letters ? "characters" : "off"}" spellcheck="false" maxlength="${letters ? 2 : 60}" placeholder="${L.ph[1]}" value="${esc(det.right)}">
       <div class="err" id="fErr">${err ? esc(err) : ""}</div>
       <button class="big" type="submit">Next</button>
       <button class="link" type="button" id="bk">← Back</button>
@@ -414,12 +417,24 @@ function showForm(err){
     e.preventDefault();
     det.q = $("fQ").value.trim(); det.mine = $("fMine").value.trim(); det.right = $("fRight").value.trim();
     if (letters){ det.mine = det.mine.toUpperCase(); det.right = det.right.toUpperCase(); }
+    if (map){ // a letter answer becomes a capital; a word answer stays as typed
+      if (det.mine.length <= 2) det.mine = det.mine.toUpperCase();
+      if (det.right.length <= 2) det.right = det.right.toUpperCase();
+    }
     const qn = Number(det.q);
     if (det.q && (!Number.isInteger(qn) || qn < 1 || qn > 40)) return showForm("The question number must be between 1 and 40.");
     if (!det.right) return showForm(letters ? "Please type the right letter." : "Please type the right answer.");
     if (letters){
       if (det.mine && det.mine === det.right) return showSame();
-      return showQuestion(det.kind === "m" ? TREE_MAP : TREE_LETTER, []);
+      return showQuestion(TREE_LETTER, []);
+    }
+    if (map){
+      if (det.right.length > 2){ // words on a map or diagram: check spelling, -s and word count first
+        const auto = autoCheck(det.mine, det.right);
+        if (auto && auto.same) return showSame();
+        if (auto) return showResult(auto.r, true);
+      } else if (det.mine && det.mine === det.right) return showSame();
+      return showQuestion(TREE_MAP, []);
     }
     const auto = autoCheck(det.mine, det.right);
     if (auto && auto.same) return showSame();
@@ -450,7 +465,7 @@ function showQuestion(node, path){
 function showResult(r, auto, picking){
   setStep("Result");
   const R0 = REASONS[r];
-  const what = det.mine ? `You ${det.kind === "w" ? "wrote" : "chose"} “${esc(det.mine)}”. The answer is “${esc(det.right)}”.` : `You left it empty. The answer is “${esc(det.right)}”.`;
+  const what = det.mine ? `You ${det.kind === "w" || det.mine.length > 2 ? "wrote" : "chose"} “${esc(det.mine)}”. The answer is “${esc(det.right)}”.` : `You left it empty. The answer is “${esc(det.right)}”.`;
   $("detView").innerHTML = `
     <div class="result">
       <div class="k">${auto ? "Found it" : "This was"}${det.q ? " · Q" + esc(det.q) : ""}</div>
