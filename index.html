@@ -63,6 +63,15 @@ h2{font-size:20px;margin:0 0 4px;color:var(--navy)}
 .tm .times{color:var(--mute);font-size:14px;white-space:nowrap}
 .tm .fix{margin:6px 0 0;font-size:15px}
 .tm .fix b{color:var(--navy)}
+.wgroup{margin-bottom:14px}
+.wgroup h3{font-size:15px;margin:0 0 6px;color:var(--mute);font-weight:700}
+.wrow{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 2.2em;gap:8px;align-items:center;font-size:15px;padding:3px 0}
+.wrow .bar{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
+.wrow .bar i{display:block;height:100%;background:var(--navy);opacity:.6;border-radius:6px}
+.wrow.worst{font-weight:700}
+.wrow.worst .bar i{background:var(--accent);opacity:1}
+.wrow b{text-align:right}
+.wtip{font-size:14px;background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin-top:4px}
 .empty{color:var(--mute);text-align:center;padding:10px 0;font-size:15px}
 
 /* history */
@@ -173,6 +182,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
     <div class="top" id="top"></div>
   </section>
 
+  <section class="card" id="whereCard" hidden>
+    <h2>Where you lose marks</h2>
+    <p class="sub" id="whereSub">From the question numbers and question types you entered.</p>
+    <div id="where"></div>
+  </section>
+
   <section class="card" id="histCard" hidden>
     <h2>My wrong answers</h2>
     <p class="sub">Newest first.</p>
@@ -236,31 +251,31 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 const REASONS = [
   {name:"Spelling", hint:"I heard it but wrote it wrong",
    why:"You had the right word, but the spelling was wrong.",
-   fix:"Write every misspelled word in a list. Write each one 3 times. Test yourself every week. Practise spelling names and streets out loud."},
+   fix:"Keep a notebook of every word you misspell and test yourself every week. Watch double letters (accommodation, necessary) and words that sound the same (quite/quiet). British and American spellings are both accepted."},
   {name:"Missing -s", hint:"One thing or many? I got it wrong",
    why:"The word was right, but the -s (one thing or many) was wrong.",
    fix:"Before the audio, look at the word before the gap: a, an, many, several, two. One thing or many? At the end, check every -s."},
   {name:"Trick answer", hint:"The speaker said it, then changed it",
    why:"The speaker said your answer too, but then changed it or said it was wrong. This is a trap.",
-   fix:"The first thing you hear is often wrong. Wait for words like actually, sorry, no wait, but, however. In multiple choice, the speaker usually talks about every option: listen for why each one is wrong and cross it out."},
+   fix:"The first thing you hear is often changed. Listen for but, however, actually, sorry. In multiple choice the speakers usually talk about every option: tick the one you think is right, but keep listening until they have discussed them all."},
   {name:"Different words", hint:"They said it with other words",
    why:"The speaker said the answer with different words from the question, so you didn't notice it.",
    fix:"Before the audio, underline 2 key words in each question (and in each option) and think of another way to say them. The recording almost never uses the same words. After the test, write the pairs in a list."},
-  {name:"Got lost", hint:"I missed my place in the questions",
-   why:"You were still waiting for another question when this answer was said.",
-   fix:"Always look at two questions at once: this one and the next. If you miss one, forget it and move on. Guess at the end."},
+  {name:"Got lost", hint:"I lost my place or stopped focusing",
+   why:"You lost your place, or your mind wandered, and the answer went past.",
+   fix:"Watch this question and the next one together. If you miss one, let it go and move on, and guess at the end. Use the breaks to read the next questions, not to check old answers. Build focus step by step: practise one Part at a time, then two, then a full test."},
   {name:"Too many words", hint:"Broke the word limit or format",
    why:"You wrote more words than allowed, or the wrong form.",
    fix:"Circle the rule before you start, like ONE WORD AND/OR A NUMBER. Check dates, times and numbers are written the right way."},
   {name:"New word", hint:"I didn't know this word",
    why:"The answer used a word you didn't know yet.",
-   fix:"Add it to a word list by topic. Learn how to spell it and how to say it, not only what it means."},
-  {name:"Too fast", hint:"I heard it but couldn't catch it",
-   why:"You heard the answer but it was too fast or unclear to catch.",
-   fix:"Find the sentence in the transcript. Listen and repeat it 5 times: slowly first, then at normal speed. Listen to British and Australian accents too."},
+   fix:"First guess the meaning from the sentence, then check it. Write it in a notebook with its pronunciation and the sentence you heard it in, and review your notebook every week. Part 4 lectures use more academic words, so listen to talks and podcasts on academic topics."},
+  {name:"Too fast", hint:"Words ran together or the accent was hard",
+   why:"You heard the answer, but the words ran together or the accent was hard to follow.",
+   fix:"Replay the sentence 5–10 times and try to separate every word (\"wanna go\" = \"want to go\"). Only then check the transcript. Listen to many accents: British, Australian, American, Canadian, New Zealand."},
   {name:"Map directions", hint:"I got lost on the map",
    why:"You lost track of where the speaker was on the map, or a direction word confused you.",
-   fix:"Before the audio, find the starting point and the entrance. Learn these words: opposite, next to, behind, in front of, on the corner, at the end of, turn left/right. Follow the speaker with your finger."}
+   fix:"Before the audio, find where the speaker starts and picture the route. Learn the direction words: opposite, next to, behind, in front of, at the top/bottom, on the corner, just past, clockwise, turn left/right. Follow the speaker with your pencil."}
 ];
 const R = {SPELL:0, S:1, TRICK:2, DIFF:3, LOST:4, WORDS:5, NEW:6, FAST:7, MAP:8};
 const BANDS = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4]];
@@ -344,9 +359,9 @@ const TREE_MAP = {
               yes:R.TRICK, no:R.FAST } }
 };
 const KINDS = {
-  w:{label:"I wrote words or numbers", sub:"Forms, notes, tables, sentences"},
-  l:{label:"I chose a letter", sub:"Multiple choice (A, B, C) or matching"},
-  m:{label:"A map or a plan", sub:"Labelling places on a map"}
+  w:{label:"I wrote words or numbers", short:"Writing words", sub:"Forms, notes, tables, sentences"},
+  l:{label:"I chose a letter", short:"Choosing a letter", sub:"Multiple choice (A, B, C) or matching"},
+  m:{label:"A map or a plan", short:"Maps and plans", sub:"Labelling places on a map"}
 };
 
 /* ---------- state ---------- */
@@ -501,6 +516,30 @@ function renderTop(){
       <p class="fix"><b>How to fix it:</b> ${REASONS[i].fix}</p>
     </div>`).join("");
 }
+// Part of the test from the question number
+const PART = { label:"Part", count:4, of:q => Math.min(4, Math.ceil(q/10)),
+  tip:{3:"Most of your mistakes are in Parts 3–4. That usually means academic words or fast, joined-up speech: practise with talks and lectures.",
+       4:"Most of your mistakes are in Parts 3–4. That usually means academic words or fast, joined-up speech: practise with talks and lectures."} };
+function renderWhere(){
+  const list = state.mistakes.slice(-RECENT);
+  const withQ = list.filter(m => m.q), withK = list.filter(m => m.k && KINDS[m.k]);
+  $("whereCard").hidden = withQ.length < 3 && withK.length < 3;
+  if ($("whereCard").hidden) return;
+  const rows = (pairs) => { const max = Math.max(...pairs.map(x=>x[1]), 1), top = Math.max(...pairs.map(x=>x[1]));
+    return pairs.map(([lab,n]) => `<div class="wrow ${n && n===top ? "worst" : ""}"><span>${lab}</span><span class="bar"><i style="width:${Math.round(n/max*100)}%"></i></span><b>${n}</b></div>`).join(""); };
+  let html = "";
+  if (withQ.length >= 3){
+    const c = Array(PART.count).fill(0); withQ.forEach(m => c[PART.of(m.q)-1]++);
+    html += `<div class="wgroup"><h3>By ${PART.label.toLowerCase()}</h3>${rows(c.map((n,i)=>[`${PART.label} ${i+1}`, n]))}</div>`;
+    const worst = c.indexOf(Math.max(...c)) + 1;
+    if (PART.tip[worst] && c[worst-1] >= 2) html += `<p class="wtip">${PART.tip[worst]}</p>`;
+  }
+  if (withK.length >= 3){
+    const ks = Object.keys(KINDS), c = ks.map(k => withK.filter(m => m.k === k).length);
+    html += `<div class="wgroup" style="margin-top:12px"><h3>By question type</h3>${rows(ks.map((k,i)=>[KINDS[k].short, c[i]]))}</div>`;
+  }
+  $("where").innerHTML = html;
+}
 let showAll = false;
 function renderHist(){
   const list = state.mistakes.map((m,i)=>({m,i})).reverse();
@@ -626,7 +665,7 @@ $("welcomeOk").onclick = () => { state.seenWelcome = true; save(); $("welcome").
 // tap outside a dialog closes it
 document.querySelectorAll("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d) d.close(); }));
 
-function renderAll(){ renderReasons(); renderTop(); renderHist(); renderScores(); $("bandNow").textContent = ""; }
+function renderAll(){ renderReasons(); renderTop(); renderWhere(); renderHist(); renderScores(); $("bandNow").textContent = ""; }
 load();
 $("welcome").hidden = !!state.seenWelcome;
 renderAll();
